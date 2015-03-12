@@ -5,9 +5,9 @@ import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import net.ravendb.abstractions.json.linq.RavenJArray;
 import net.ravendb.client.IDocumentSession;
 import net.ravendb.client.IDocumentStore;
+import net.ravendb.client.document.DocumentQueryCustomizationFactory;
 import net.ravendb.client.linq.IRavenQueryable;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,19 +25,17 @@ public class SineController {
 	private IDocumentStore store;
 
 	@RequestMapping(method = RequestMethod.GET)
-	protected void doGet(HttpServletRequest request, HttpServletResponse response) {
+	@ResponseBody
+	protected List<Sine> doGet(HttpServletRequest request, HttpServletResponse response) {
 
 		System.out.println("test...");
 
 		try (IDocumentSession session = store.openSession()) {
 			QSine t = QSine.sine;
 
-			IRavenQueryable<Sine> query = session.query(Sine.class).orderBy(t.x.asc());
+			IRavenQueryable<Sine> query = session.query(Sine.class).orderBy(t.x.asc()).customize(new DocumentQueryCustomizationFactory().waitForNonStaleResultsAsOfNow());
 
-			List<Sine> sineList = query.toList();
-
-			response.getWriter().write(RavenJArray.fromObject(sineList).toString());
-			response.getWriter().close();
+			return query.toList();
 
 		} catch (Exception e) {
 			throw new RuntimeException(e);
